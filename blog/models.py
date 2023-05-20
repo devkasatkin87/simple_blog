@@ -2,6 +2,11 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 
+# создаем конкретно-прикладной менеджер который отбирает все посты со статусом Published. Менеджер работает по умолчаниюю
+class PublishedManager(models.Manager): 
+    def get_querySet(self):
+        return super().get_queryset().filter(status=Post.Status.PUBLISHED)
+
 class Post(models.Model):
     
     # определяем подкласс для создания выбираемых значений по аналогии с enum
@@ -18,6 +23,12 @@ class Post(models.Model):
     updated = models.DateTimeField(auto_now = True)
     status = models.CharField(max_length = 2, choices=Status.choices, default=Status.DRAFT)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts')
+    
+    # менеджер применяемый по умолчанию
+    objects = models.Manager()
+    # конкретно прикладной менеджер
+    published = PublishedManager()
+    
     
     
     class Meta:
