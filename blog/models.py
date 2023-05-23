@@ -20,7 +20,7 @@ class Post(models.Model):
 
     # определяем поля класса они же будут соответствовать полям таблицы БД
     title = models.CharField(max_length=250)
-    slug = models.SlugField(max_length=250, unique_for_date='publish') # уникальное значение поля для определенной даты
+    slug = models.SlugField(max_length=250, unique_for_date='publish') # уникальное значение поля slug для определенной даты
     body = models.TextField()
     publish = models.DateTimeField(default=timezone.now)
     created = models.DateTimeField(auto_now_add=True)
@@ -51,4 +51,8 @@ class Post(models.Model):
 
     # получение абсолюного url для использования динамическое генерации url
     def get_absolute_url(self):
-        return reverse('blog:post_details', args=[self.id])
+        return reverse('blog:post_details', 
+                       args=[self.publish.year,
+                             self.publish.month,
+                             self.publish.day,
+                             self.slug])

@@ -26,8 +26,13 @@ def post_list(request):
 
 
 # Возвражает пост с переданным Id по указанному Url, если не находит прокидывает ошибку Http404
-def post_details(request, id):
+def post_details(request, year, month, day, post):
 
-    post = get_object_or_404(Post, id=id, status=Post.Status.PUBLISHED)
+    post = get_object_or_404(Post,
+                             status=Post.Status.PUBLISHED,
+                             slug=post,
+                             publish__year=year,
+                             publish__month=month,
+                             publish__day=day)
 
     return render(request, 'blog/post/details.html', {'post': post})
