@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from .models import Post
 from django.http import Http404
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
 # Функция возращает все посты со статусом published и передает их по указанному URL
@@ -10,14 +10,22 @@ def post_list(request):
 
     # создаем объект класса Paginator с количеством 3 постов на страницу
     paginator = Paginator(post_list, 3)
-    # Мы извлекаем HTTP GET-параметр page и сохраняем его в переменной page_number. 
-    # Этот параметр содержит запрошенный номер страницы. Если параметра page нет в GET-параметрах запроса, 
+    # Мы извлекаем HTTP GET-параметр page и сохраняем его в переменной page_number.
+    # Этот параметр содержит запрошенный номер страницы. Если параметра page нет в GET-параметрах запроса,
     # то мы используем стандартное значение 1, чтобы загрузить первую страницу результатов.
     #page_number = request.GET.get('page', 1)
     page_number = request.GET.get('page', 1)
-    # Мы получаем объекты для желаемой страницы, вызывая метод page() класса Paginator.
-    posts = paginator.page(page_number)
 
+    try:
+        # Мы получаем объекты для желаемой страницы, вызывая метод page() класса Paginator.
+        posts = paginator.page(page_number)
+    except PageNotAnInteger:
+        # если введен 
+        posts = paginator.page(1)
+    except EmptyPage:
+        # Мы получаем объекты для желаемой страницы, вызывая метод page() класса Paginator.
+        # если указан не существующий номер страницы то вывести последнюю страницу
+        posts = paginator.page(paginator.num_pages)
     # Мы передаем номер страницы и объект posts в шаблон.
     return render(request, 'blog/post/list.html', {'posts': posts})
 
