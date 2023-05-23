@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from .models import Post
 from django.http import Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.generic import ListView
 
 
 # Функция возращает все посты со статусом published и передает их по указанному URL
@@ -56,3 +57,16 @@ def post_details(request, year, month, day, post):
                              publish__day=day)
 
     return render(request, 'blog/post/details.html', {'post': post})
+
+
+class PostListView(ListView):
+    """
+        Альтернативное представление списка постов
+    
+    """
+    
+    queryset = Post.published.all()
+    context_object_name = 'posts'
+    paginate_by = 3
+    template_name = 'blog/post/list.html'
+    
