@@ -20,7 +20,9 @@ class Post(models.Model):
 
     # определяем поля класса они же будут соответствовать полям таблицы БД
     title = models.CharField(max_length=250)
-    slug = models.SlugField(max_length=250, unique_for_date='publish') # уникальное значение поля slug для определенной даты
+    slug = models.SlugField(
+        max_length=250, unique_for_date='publish'
+    )  # уникальное значение поля slug для определенной даты
     body = models.TextField()
     publish = models.DateTimeField(default=timezone.now)
     created = models.DateTimeField(auto_now_add=True)
@@ -51,8 +53,35 @@ class Post(models.Model):
 
     # получение абсолюного url для использования динамическое генерации url
     def get_absolute_url(self):
-        return reverse('blog:post_details', 
-                       args=[self.publish.year,
-                             self.publish.month,
-                             self.publish.day,
-                             self.slug])
+        return reverse('blog:post_details',
+                       args=[
+                           self.publish.year, self.publish.month,
+                           self.publish.day, self.slug
+                       ])
+
+
+# класс отвечающий модель комментариев к постам
+class Comment(models.Model):
+    # поле для связи многое к одному (одному посту соответствует множество комментариев)
+    post = models.ForeignKey(Post,
+                             on_delete=models.CASCADE,
+                             related_name='comments')
+
+    # определение полей таблицы БД
+    name = models.CharField(max_length=80)
+    email = models.EmailField()
+    body = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        # автоматически задаем порядок сортировки выдачи данных из таблицы БД "от новых к старым"
+        ordering = ['created']
+        # определение индексирования поля в БД
+        indexes = [
+            models.Index(fields=['created']),
+        ]
+
+    def __str__(self) -> str:
+        return f'Comment by {self.name} on {self.post}'
