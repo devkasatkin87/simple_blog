@@ -1,10 +1,11 @@
 from django.shortcuts import render, get_object_or_404
-from .models import Post
+from .models import Post, Comment
 from django.http import Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
-from .forms import EmailPostForms
+from .forms import EmailPostForms, CommentForm
 from django.core.mail import send_mail
+from django.views.decorators.http import require_POST
 
 
 # Функция возращает все посты со статусом published и передает их по указанному URL
@@ -57,8 +58,16 @@ def post_details(request, year, month, day, post):
                              publish__year=year,
                              publish__month=month,
                              publish__day=day)
+    # список активных комментариев к этому посту
+    comments = post.comments.filter(active=True)
+    # Форма для комментирования пользователями
+    form = CommentForm()
 
-    return render(request, 'blog/post/details.html', {'post': post})
+    return render(request, 'blog/post/details.html', {
+        'post': post,
+        'comments': comments,
+        'form': form
+    })
 
 
 # # возращает отправленную форму и данные поста, которым нужно поделится через почту
@@ -122,7 +131,7 @@ def post_share(request, post_id):
 
             # отправить письмо
             send_mail(subject, message, 'your_account@gmail.com', [cd['to']])
-            
+
             sent = True
 
     else:
@@ -144,3 +153,31 @@ class PostListView(ListView):
     context_object_name = 'posts'
     paginate_by = 3
     template_name = 'blog/post/list.html'
+
+
+# представление для обработки комментария к посту, сохранению в БД
+@require_POST
+def post_comment(request, post_id):
+    # По id поста извлекается опубликованный пост,и спользуя функцию сокращенного доступа get_object_or_404().
+    post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+    # Определяется переменная comment с изначальным значением None.
+    # Указанная переменная будет использоваться для хранения комментарного объекта при его создании.
+    comment = None
+
+    # комментарий был отправлен
+    # создаем экземпляр формы и передаем в конструктор данные переданные методом POST
+    form = CommentForm(data=request.POST)
+    # валидация данных формы
+    if form.is_valid():
+        # создать объект Comment не сохраняя его в БД
+        comment = form.save(commit=False)
+        # назначить пост комментарию
+        comment.post = post
+        # сохранить комментарий в БД
+        comment.save()
+
+    return render(request, 'blog/post/comment.html', {
+        'post': post,
+        'form': form,
+        'comment': comment
+    })
